@@ -1,0 +1,12 @@
+.bin/
+/app
+*.exe
+*.exe~
+*.dll
+
+.idea/
+.vscode/
+
+.env
+
+postgres_data/

@@ -1,0 +1,111 @@
+{{define "main"}}
+<div style="padding: 10px;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">Мои Финансы</h2>
+        <form action="/logout" method="POST" style="margin: 0;">
+            <button type="submit" style="background-color: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 4px;">Выйти</button>
+        </form>
+    </div>
+
+    <!-- Блок уведомлений -->
+    {{if .SuccessMsg}}
+    <div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #c3e6cb;">{{.SuccessMsg}}</div>
+    {{end}}
+    {{if .ErrorMsg}}
+    <div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #f5c6cb;">{{.ErrorMsg}}</div>
+    {{end}}
+
+    <!-- Приветствие -->
+    <div style="background-color: #eafaf1; border-left: 5px solid #2ecc71; padding: 15px; border-radius: 4px; margin-bottom: 30px; display: flex; justify-content: space-between;">
+        <div>
+            <h3 style="margin-top: 0; color: #27ae60; font-size: 18px;">Привет, {{.User.Name}}!</h3>
+            <p style="margin: 0; font-size: 14px; color: #555;">Email: {{.User.Email}}</p>
+        </div>
+        <div style="text-align: right; font-size: 12px; color: #888;">
+            ID: {{.User.ID}}<br>
+            Дата регистрации: {{.User.CreatedAt.Format "02.01.2006 15:04"}}
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+
+        <!-- Левая колонка -->
+        <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 20px;">
+
+            <!-- Добавить расход -->
+            <div style="background: #fff; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Добавить расход</h3>
+                <form action="/expenses/add" method="POST" style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="font-size: 12px; font-weight: bold; margin-bottom: -5px;">Дата и Время:</label>
+                    <input type="datetime-local" name="date" value="{{.CurrentDateTime}}" style="padding: 8px; font-family: sans-serif;">
+
+                    <label style="font-size: 12px; font-weight: bold; margin-bottom: -5px;">Категория:</label>
+                    <select name="category" style="padding: 8px;">
+                        <option value="Еда">Еда</option>
+                        <option value="Транспорт">Транспорт</option>
+                        <option value="Развлечения">Развлечения</option>
+                        <option value="ЖКХ">ЖКХ</option>
+                        <option value="Прочее">Прочее</option>
+                    </select>
+
+                    <input type="number" step="0.01" name="amount" required placeholder="Сумма (₽)" style="padding: 8px;">
+                    <input type="text" name="description" placeholder="Описание" style="padding: 8px;">
+                    <button type="submit" style="background: #3498db; color: white; border: none; padding: 10px; border-radius: 4px;">Добавить</button>
+                </form>
+            </div>
+
+            <!-- Смена пароля -->
+            <div style="background: #fff; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Сменить пароль</h3>
+                <form action="/password/update" method="POST" style="display: flex; flex-direction: column; gap: 10px;">
+                    <input type="password" name="old_password" required placeholder="Старый пароль" style="padding: 8px;">
+                    <input type="password" name="new_password" required placeholder="Новый пароль" style="padding: 8px;">
+                    <button type="submit" style="background: #f39c12; color: white; border: none; padding: 10px; border-radius: 4px;">Обновить пароль</button>
+                </form>
+            </div>
+
+        </div>
+
+        <!-- Правая колонка: История -->
+        <div style="flex: 2; min-width: 300px;">
+            <h3 style="margin-top: 0;">История операций</h3>
+            <form action="/dashboard" method="GET" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="date" name="start" value="{{.FilterStart}}">
+                <input type="date" name="end" value="{{.FilterEnd}}">
+                <!-- ИСПРАВЛЕНИЕ: Добавлены проверки selected -->
+                <select name="category">
+                    <option value="" {{if eq .FilterCategory ""}}selected{{end}}>Все категории</option>
+                    <option value="Еда" {{if eq .FilterCategory "Еда"}}selected{{end}}>Еда</option>
+                    <option value="Транспорт" {{if eq .FilterCategory "Транспорт"}}selected{{end}}>Транспорт</option>
+                    <option value="Развлечения" {{if eq .FilterCategory "Развлечения"}}selected{{end}}>Развлечения</option>
+                    <option value="ЖКХ" {{if eq .FilterCategory "ЖКХ"}}selected{{end}}>ЖКХ</option>
+                    <option value="Прочее" {{if eq .FilterCategory "Прочее"}}selected{{end}}>Прочее</option>
+                </select>
+                <button type="submit" style="padding: 5px 15px;">🔍</button>
+                <a href="/dashboard" style="font-size: 12px; align-self: center;">Сброс</a>
+            </form>
+
+            <div style="text-align: right; margin-bottom: 10px; font-weight: bold;">Итого: <span style="color: #c0392b;">{{.TotalAmount}} ₽</span></div>
+
+            {{if .Expenses}}
+            <table style="width: 100%; border-collapse: collapse; background: white;">
+                <thead><tr style="background: #ecf0f1;"><th style="padding: 10px;">Дата и Время</th><th>Категория</th><th>Описание</th><th style="text-align: right;">Сумма</th></tr></thead>
+                <tbody>
+                {{range .Expenses}}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; color: #777; font-size: 13px;">{{.CreatedAt.Format "02.01.2006 15:04"}}</td>
+                    <td><span style="background: #eee; padding: 2px 6px; border-radius: 10px; font-size: 12px;">{{.Category}}</span></td>
+                    <td>{{.Description}}</td>
+                    <td style="text-align: right; font-weight: bold;">{{.Amount}}</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+            {{else}}
+            <p style="text-align: center; color: #aaa;">Нет записей за выбранный период</p>
+            {{end}}
+        </div>
+    </div>
+</div>
+{{end}}
